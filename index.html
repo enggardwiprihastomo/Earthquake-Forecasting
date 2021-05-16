@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="icon" href="asset/ic-logo.svg">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+    integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+    crossorigin="">
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+        integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+        crossorigin=""></script>
+    <script src="https://unpkg.com/esri-leaflet@2.4.1/dist/esri-leaflet.js"
+        integrity="sha512-xY2smLIHKirD03vHKDJ2u4pqeHA7OQZZ27EjtqmuhDguxiUvdsOuXMwkg16PQrm9cgTmXtoxA6kwr8KBy3cdcw=="
+        crossorigin=""></script>
+    <link rel="stylesheet" href="https://unpkg.com/esri-leaflet-geocoder@2.3.3/dist/esri-leaflet-geocoder.css"
+        integrity="sha512-IM3Hs+feyi40yZhDH6kV8vQMg4Fh20s9OzInIIAc4nx7aMYMfo+IenRUekoYsHZqGkREUgx0VvlEsgm7nCDW9g=="
+        crossorigin="">
+    <script src="https://unpkg.com/esri-leaflet-geocoder@2.3.3/dist/esri-leaflet-geocoder.js"
+        integrity="sha512-HrFUyCEtIpxZloTgEKKMq4RFYhxjJkCiF5sDxuAokklOeZ68U2NPfh4MFtyIVWlsKtVbK5GD2/JzFyAfvT5ejA=="
+        crossorigin=""></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+    <script defer src="js/Chart.js"></script>
+    <script defer src="js/UIController.js"></script>
+    <script defer src="js/AlgorithmController.js"></script>
+    <script defer src="js/MainController.js"></script>
+    <title>Earthquake Prediction as Early Warning System</title>
+</head>
+<body>
+    <nav>
+        <button class="btn-menu"></button>
+        <ul class="menus">
+            <!-- <li class="active" id="network" data-network="nf">
+                <img src="asset/ic-nf.svg" class="menu-ic"><b><p>Neuro-Fuzzy </b>Network</p>
+            </li> -->
+            <div class="btnMap" data-lat='651376' data-lot='7267'></div>
+            <li class="active" id="network" data-network="mlp">
+                <img src="asset/ic-mlp.svg" class="menu-ic"><p><b>Multi-Layer </b>Perceptron</p>
+            </li>
+            <li id="network" data-network="rnn">
+                <img src="asset/ic-rnn.svg" class="menu-ic"><p><b>RNN </b>with LSTM Cell</p>
+            </li>
+        </ul>
+    </nav>
+    <div class="content-wrapper">
+        <div class="loader-wrapper">
+            <label class="btn-load">
+                <input type="file" accept=".json, .bin" class="file-model" multiple>
+                <span class="load-model"></span>
+                <p>Load <b>Model</b></p>
+            </label>
+            <label class="btn-load">
+                <input type="file" accept=".csv" class="file-training">
+                <span class="load-training"></span>
+                <p>Load <b>Training Set</b></p>
+            </label>
+        </div>
+        <div class="main-wrapper">
+            <div class="main-upper">
+                <div class="main-left">
+                    <div class="main-loader">
+                        <div class="loader-container">
+                            <label>
+                                <input type="file" accept=".json, .bin" class="file-model" multiple>
+                                <span class="main-load-model"></span>
+                            </label>
+                            <p class="main-loader-label" id="label-load-model"></p>
+                        </div>
+                        <div class="loader-container">
+                            <span class="main-save-model"></span>
+                            <p class="main-loader-label" id="label-save-model"></p>
+                        </div>
+                    </div>
+                    <div class="layer-container strip">
+                        <button class="btn-layer"><p>Add <b>Layer</b></p></button>
+                        <span id="neuron-desc">Number of neurons in a hidden layer</span>
+                    </div>
+                </div>
+                <div class="main-right">
+                    <div class="result-wrapper"></div>
+                    <div class="detail-wrapper">
+                        <button class="btn-back-detail"></button>
+                        <span class="detail-block-header">
+                            <p><b>Training</b> Details</p>
+                        </span>
+                        <span class="detail-block">
+                            <span class="detail-label">Number of Epochs</span>
+                            <span class="detail-value" id="Epoch"></span>
+                        </span>
+                        <span class="detail-block">
+                            <span class="detail-label">Last RMSE</span>
+                            <span class="detail-value" id="RMSE"></span>
+                        </span>
+                        <span class="detail-block">
+                            <span class="detail-label">Computational Time</span>
+                            <span class="detail-value" id="ExecutionTime"></span>
+                        </span>
+                    </div>
+                    <div class="test-wrapper">
+                        <button class="btn-back-test"></button>
+                        <div class="test-block">
+                            <div class="date-block">
+                                <button class="btn-map-input" data-lat="" data-lng=""></button>
+                                <input type="date" class="date-predict">
+                            </div>
+                            <button class="btn-predict">Get a <b>Forecast</b></button>
+                        </div>
+                        <div class="table-row-header">
+                            <span class="table-column">
+                                <span class="column-value">Date</span>
+                            </span>
+                            <span class="table-column">
+                                <span class="column-value">Location</span>
+                            </span>
+                            <span class="table-column">
+                                <span class="column-value">Forecasted Depth</span>
+                            </span>
+                            <span class="table-column">
+                                <span class="column-value">Forecasted Magnitude</span>
+                            </span>
+                            <span class="table-column">
+                                <span class="column-value">Actual Depth</span>
+                            </span>
+                            <span class="table-column">
+                                <span class="column-value">Actual Magnitude</span>
+                            </span>
+                            <span class="column-map">Map</span>
+                        </div>
+                    </div>
+                    <div class="network-wrapper">
+                        <div class="input-wrapper"></div>
+                        <div class="hidden-wrapper"></div>
+                        <div class="output-wrapper"></div>
+                    </div>
+                    <div class="network-info">
+                        <div class="inner-flex">
+                            <div class="neuron-info blue"></div>
+                            <p id="inputNeurons"></p>
+                        </div>
+                        <div class="inner-flex">
+                            <div class="neuron-info green"></div>
+                            <p id="hiddenNeurons"></p>
+                        </div>
+                        <div class="inner-flex">
+                            <div class="neuron-info yellow"></div>
+                            <p id="outputNeurons"></p>
+                        </div>
+                        <div class="inner-flex">
+                            <div class="neuron-data"></div>
+                            <p id="trainingData"></p>
+                        </div>
+                    </div>
+                    <div class="map-wrapper"></div>
+                    <div class="chart-wrapper"></div>
+                </div>
+            </div>
+            <div class="main-lower">
+                <button class="btn-submit bold">Submit</button>
+                <button class="btn-training"><b>Training </b>Details</button>
+                <button class="btn-test"><b>Test </b>Results</button>
+                <button class="btn-back bold">Back</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="message-wrapper"></div>
+</body>
+</html>
